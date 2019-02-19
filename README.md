@@ -8,6 +8,8 @@
 
 ​	需要导入user.sql文件
 
+
+   用户名 ： cunye  yinrui  admin
 ​	登录密码为 123123
 
 在ChatRoom/login.php 中修改数据库的名称、用户名和密码
