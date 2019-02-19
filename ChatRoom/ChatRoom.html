@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天室</title>
+    <style>
+        body,html {
+            margin: 0;
+            padding: 0;
+        }
+        a {
+            text-decoration: none;
+        }
+        ul {
+            list-style: none;
+        }
+        .box {
+            width: 700px;
+            height: 700px;
+            border: 1px solid #000;
+            margin: 100px auto;
+            position: relative;
+        }
+        .box .info {
+            width: 75%;
+            height: 70%;
+            border-bottom: 1px solid #000;
+            overflow: auto;
+        }
+        .box .info ul {
+            list-style: none;
+            padding: 0;
+        }
+        .box .info ul li {
+            margin-bottom: 20px;
+        }
+        .box .info ul li .name {
+            padding-left: 10px;
+            color: blue;
+        }
+        .box .info ul li .news {
+            display: block;
+            margin-top: 10px;
+            padding: 0 20px;
+        }
+        .box .top {
+            width: 75%;
+            position: relative;
+            top: 0;
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 1px solid #000;
+        }
+        .box .content {
+            width: 75%;
+            height: 19%;
+            border-bottom: 1px solid #000;
+        }
+        .box .content textarea {
+            padding: 10px;
+            border: none;
+            resize:none;
+            outline: none;
+            padding: 0;
+            margin: 0;
+            width: 525px;
+            height: 99%;
+        }
+        .box .users {
+            box-sizing: border-box;
+            padding: 20px 10px;
+            width: 25%;
+            height: 100%;
+            border-left: 1px solid #000;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        .box .users .head {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 1px solid #000;
+        }
+        input[type=button] {
+            margin-top: 5px;
+            position: absolute;
+            left: 65%;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        当前用户： {{this.user}}
+        <div class="box">
+            <div v-if="toUser" class="top">{{userList[toUser]}}</div>
+            <div v-else class="top">多人聊天</div>
+            <!-- 信息区 -->
+            <div class="info">
+                <ul>
+                    <li v-for="(v,k) in messages">
+                        <div>
+                            <span class="name"><span v-if="v['type']=='to'">[私聊]</span> {{v['username']}} {{v['time']}}</span> 
+                            </br>   
+                            <span class="news">{{v['message']}}</span>
+                        </div>
+                    </li>
+                    
+                </ul>
+            </div>
+            <!-- 内容区 -->
+            <div class="content">
+                <textarea v-model="content" @keyup.enter="submit" ></textarea>
+            </div>
+            <!-- 联系人区 -->
+            <div class="users">
+                <div class="head">点击用户私聊</div>
+                <ul>
+                    <li v-for="(v,k) in userList">
+                        <a href="javascript:;" @click="to(k)">{{v}}</a> 
+                    </li>
+                </ul>
+            </div>
+            <input @click="submit" type="button" value="发送">
+        </div>
+    </div>
+    
+</body>
+</html>
+<script src="./js/vue.min.js"></script>
+<script>
+new Vue({
+    el:"#app",
+    data: {
+        ws: null,  // 保存 WebSocket 对象
+        content:'',
+        messages: [],  // 保存所有接收的消息
+        userList:'', // 保存用户
+        user:'', // 保存当前用户
+        toUser:'', // 判断是否私聊
+    },
+    // 当 vue 创建时调用
+    created: function(){
+        var token = localStorage.getItem('jwt_token')
+        if(token == undefined)
+        {
+            alert('请先登录')
+            location.href = "http://localhost:9999/ChatRoom/login.html"
+        }
+        else
+        {
+            // 获取url参数
+            var url = location.search;
+            var theRequest = new Object();
+            if (url.indexOf("?") != -1) {
+                var str = url.substr(1);
+                strs = str.split("&");
+                for(var i = 0; i < strs.length; i ++) {
+                    theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+                }
+            }
+            this.toUser = theRequest['to'] ? theRequest['to'] : '';
+            
+            // 连接WebSocket服务器
+            this.ws = new WebSocket('ws://127.0.0.1:9999?token='+token)
+            this.ws.onopen = this.open
+            this.ws.onmessage = this.message
+        }
+        
+    },
+    methods:{
+        submit:function(){
+            if(this.content==false)
+            {
+                alert('消息内容不能为空')
+            }
+            else
+            {
+                // 把框里的内容发送到服务器
+                // 判断 群发还是私聊
+                if(this.toUser)
+                {
+                    this.ws.send( this.toUser+':'+this.content )
+                }
+                else
+                {
+                    this.ws.send( 'all:'+this.content )
+                }
+                
+                // 清空框
+                this.content = ''
+            }
+            
+        },
+        open: function() {
+            alert('连接成功！')
+        },
+        message: function(e) {
+
+            // 解析JSON
+            let data = JSON.parse(e.data)
+            // 根据消息的类型发处理消息
+
+            if(data.type == 'users')
+            {
+                this.userList = data.users
+                
+                // this.messages.push(data.message)
+                // console.log(this.messages)
+            }
+            else if(data.type == 'user')
+            {
+                this.user = data.username
+            }
+            else
+            {
+                this.messages.push(data)
+            }
+        },
+        to: function(id) {
+            window.open("http://localhost:9999/ChatRoom/ChatRoom.html?to="+id)
+        },
+        keepBottom: function() {
+            var infoBox = document.querySelector('.info')
+            var infoContent = document.querySelector('.info ul')
+            infoBox.scrollTop = infoContent.scrollHeight
+        }
+    },
+    watch: {
+        messages: 'keepBottom'
+    },
+})
+</script>

@@ -1,0 +1,26 @@
+2019-02-18 13:09:48 pid:1 Error: Call to a member function send() on null in D:\anheng\ChatRoom\server.php:99
+Stack trace:
+#0 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), Array)
+#1 D:\anheng\Workerman-master\Connection\TcpConnection.php(658): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), 'undefined:12323...')
+#2 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #24)
+#3 D:\anheng\Workerman-master\Events\Select.php(294): call_user_func_array(Array, Array)
+#4 D:\anheng\Workerman-master\Worker.php(2349): Workerman\Events\Select->loop()
+#5 D:\anheng\Workerman-master\Worker.php(1343): Workerman\Worker->run()
+#6 D:\anheng\Workerman-master\Worker.php(1286): Workerman\Worker::forkWorkersForWindows()
+#7 D:\anheng\Workerman-master\Worker.php(509): Workerman\Worker::forkWorkers()
+#8 D:\anheng\ChatRoom\server.php(129): Workerman\Worker::runAll()
+#9 {main}
+2019-02-18 13:09:48 pid:1 Worker process terminated
+2019-02-18 13:25:04 pid:1 Error: Call to a member function send() on null in D:\anheng\ChatRoom\server.php:100
+Stack trace:
+#0 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), Array)
+#1 D:\anheng\Workerman-master\Connection\TcpConnection.php(658): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), 'undefined:12321...')
+#2 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #24)
+#3 D:\anheng\Workerman-master\Events\Select.php(294): call_user_func_array(Array, Array)
+#4 D:\anheng\Workerman-master\Worker.php(2349): Workerman\Events\Select->loop()
+#5 D:\anheng\Workerman-master\Worker.php(1343): Workerman\Worker->run()
+#6 D:\anheng\Workerman-master\Worker.php(1286): Workerman\Worker::forkWorkersForWindows()
+#7 D:\anheng\Workerman-master\Worker.php(509): Workerman\Worker::forkWorkers()
+#8 D:\anheng\ChatRoom\server.php(130): Workerman\Worker::runAll()
+#9 {main}
+2019-02-18 13:25:04 pid:1 Worker process terminated
