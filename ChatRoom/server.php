@@ -25,7 +25,6 @@ $worker->onConnect = function( $connection ) {
     
     $connection->onWebSocketConnect = function ($connection, $http_header) {
         global $users, $worker , $usersConn;
-
         // 解析令牌
         try
         {
@@ -37,7 +36,6 @@ $worker->onConnect = function( $connection ) {
             $usersConn[$data->id] = $connection;
             // 将用户ID保存到当前客户端中
             $connection->uid = $data->id;
-            echo "用户{$data->name}上线了\r\n";
             // 返回用户名
             $connection->send(json_encode([
                 'type'=>'user',
@@ -49,6 +47,9 @@ $worker->onConnect = function( $connection ) {
                 $c->send(json_encode([
                     'type'=>'users',
                     'users'=>$users,
+                ]));
+                $c->send(json_encode([
+                    'type'=>'system',
                     'message'=>"系统消息: 用户{$data->name}上线了"
                 ]));
             }
@@ -66,14 +67,15 @@ $worker->onConnect = function( $connection ) {
 // 接收消息
 $worker->onMessage = function($connection, $data) {
     global $worker,$users;
-
+    // 判断是群发 还是私聊
     $data = explode(':',$data);
     if($data[0]=='all')
     {
+        // 删除标识
         unset($data[0]);
+        // 转回字符串
         $data = implode(':',$data);
-        // 是否判断
-        $is_if = true;
+        // 时区相差8小时
         $now = date('H:i',strtotime ("+8 hours"));
         foreach($worker->connections as $c)
         {
@@ -89,6 +91,7 @@ $worker->onMessage = function($connection, $data) {
     {
         global $usersConn;
         $id = $data[0];
+        // 删除标识
         unset($data[0]);
         $now = date('H:i',strtotime ("+8 hours"));
         // 发送给私聊对象
@@ -113,15 +116,19 @@ $worker->onMessage = function($connection, $data) {
 $worker->onClose = function($connection)
 {
     global $worker,$users;
-    echo "用户{$users[$connection->uid]}下线了";
     // 当用户断开时从列表中删除
+    $username = $users[$connection->uid];
     unset($users[$connection->uid]);
-    // var_dump($users);
+    
     foreach($worker->connections as $c)
     {
         $c->send(json_encode([
             'type'=>'users',
             'users'=>$users,
+        ]));
+        $c->send(json_encode([
+            'type'=>'system',
+            'message'=>"系统消息: 用户{$username}下线了",
         ]));
     }
 };

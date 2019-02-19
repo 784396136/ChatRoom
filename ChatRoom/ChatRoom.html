@@ -86,43 +86,51 @@
         input[type=button] {
             margin-top: 5px;
             position: absolute;
-            left: 65%;
+            left: 55%;
+        }
+        .self {
+            color: forestgreen !important;
         }
     </style>
 </head>
 <body>
     <div id="app">
-        当前用户： {{this.user}}
+        <h2>当前用户： {{this.user}}</h2>
         <div class="box">
             <div v-if="toUser" class="top">{{userList[toUser]}}</div>
             <div v-else class="top">多人聊天</div>
             <!-- 信息区 -->
             <div class="info">
                 <ul>
+                    <!-- 根据信息类型显示不同的样式 -->
                     <li v-for="(v,k) in messages">
-                        <div>
-                            <span class="name"><span v-if="v['type']=='to'">[私聊]</span> {{v['username']}} {{v['time']}}</span> 
+                        <div v-if="v['type']!='system'">
+                            <span :class="{name:true,self:user==v['username']}"><span v-if="v['type']=='to'">[私聊]</span> {{v['username']}} {{v['time']}}</span> 
                             </br>   
                             <span class="news">{{v['message']}}</span>
                         </div>
+                        <div v-else>
+                            <span style="display:block;width:100%;text-align:center;color:firebrick;">{{v['message']}}</span>
+                        </div>
                     </li>
-                    
                 </ul>
             </div>
             <!-- 内容区 -->
             <div class="content">
-                <textarea v-model="content" @keyup.enter="submit" ></textarea>
+                <!-- 监听键盘的回车事件 -->
+                <textarea v-model="content" @keyup.ctrl.enter="submit" ></textarea>
             </div>
             <!-- 联系人区 -->
             <div class="users">
                 <div class="head">点击用户私聊</div>
                 <ul>
                     <li v-for="(v,k) in userList">
-                        <a href="javascript:;" @click="to(k)">{{v}}</a> 
+                        <a href="javascript:;" @click="to(k)">{{v}}</a>
                     </li>
                 </ul>
+                <a v-if="toUser!=''" @click="back" style="display:block;text-align: center;cursor: pointer;">点击返回群聊</a>
             </div>
-            <input @click="submit" type="button" value="发送">
+            <input @click="submit" type="button" value="发送（ctrl+回车）">
         </div>
     </div>
     
@@ -142,6 +150,7 @@ new Vue({
     },
     // 当 vue 创建时调用
     created: function(){
+        // 判断是否登录
         var token = localStorage.getItem('jwt_token')
         if(token == undefined)
         {
@@ -150,18 +159,6 @@ new Vue({
         }
         else
         {
-            // 获取url参数
-            var url = location.search;
-            var theRequest = new Object();
-            if (url.indexOf("?") != -1) {
-                var str = url.substr(1);
-                strs = str.split("&");
-                for(var i = 0; i < strs.length; i ++) {
-                    theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
-                }
-            }
-            this.toUser = theRequest['to'] ? theRequest['to'] : '';
-            
             // 连接WebSocket服务器
             this.ws = new WebSocket('ws://127.0.0.1:9999?token='+token)
             this.ws.onopen = this.open
@@ -170,6 +167,7 @@ new Vue({
         
     },
     methods:{
+        // 发送消息
         submit:function(){
             if(this.content==false)
             {
@@ -178,7 +176,7 @@ new Vue({
             else
             {
                 // 把框里的内容发送到服务器
-                // 判断 群发还是私聊
+                // 判断 群发还是私聊并添加标识
                 if(this.toUser)
                 {
                     this.ws.send( this.toUser+':'+this.content )
@@ -193,9 +191,11 @@ new Vue({
             }
             
         },
+        // 连接websocket成功时调用
         open: function() {
             alert('连接成功！')
         },
+        // 接收消息
         message: function(e) {
 
             // 解析JSON
@@ -204,30 +204,39 @@ new Vue({
 
             if(data.type == 'users')
             {
+                // 将数据更新到用户列表中
                 this.userList = data.users
-                
-                // this.messages.push(data.message)
-                // console.log(this.messages)
             }
             else if(data.type == 'user')
             {
+                // 获取当前用户
                 this.user = data.username
             }
             else
             {
+                // 更新信息
                 this.messages.push(data)
             }
         },
+        // 私聊跳转的页面 参数为用户ID
         to: function(id) {
-            window.open("http://localhost:9999/ChatRoom/ChatRoom.html?to="+id)
+            this.toUser = id
         },
+        back: function() {
+            this.toUser = ''
+        },
+        // 保持滚动条始终在底部
         keepBottom: function() {
-            var infoBox = document.querySelector('.info')
-            var infoContent = document.querySelector('.info ul')
-            infoBox.scrollTop = infoContent.scrollHeight
+            // $nextTick 是在下次 DOM 更新循环结束之后执行延迟回调，在修改数据之后使用 。
+            this.$nextTick(()=>{
+                var infoBox = document.querySelector('.info')
+                var infoContent = document.querySelector('.info ul')
+                infoBox.scrollTop = infoContent.scrollHeight
+            })
         }
     },
     watch: {
+        // 监听messages 当数据更新时调用 keepBottom事件
         messages: 'keepBottom'
     },
 })
