@@ -1,4 +1,6 @@
-启动时使用 php -S localhost:9999 启动内置服务器
+启动时使用 php -S localhost:9999 启动PHP内置服务器
+
+启动后访问 http://localhost:9999/ChatRoom/login.html
 
 启动WebSocket 服务器 php server.php start
 
